@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🧟 ZOMBIE APOCALYPSE · SURVIVAL 2D</title>
+    <style>
+        /* ===== GLOBAL RESET & BODY ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: #0a0d10;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        /* ===== GAME WRAPPER ===== */
+        .game-wrapper {
+            background: linear-gradient(145deg, #141b22, #1a232b);
+            padding: 16px 16px 20px;
+            border-radius: 36px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.95), inset 0 1px 2px rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #2f404a;
+        }
+
+        /* ===== CANVAS ===== */
+        canvas {
+            display: block;
+            width: 960px;
+            height: 640px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 80px #000000aa, 0 10px 30px #00000080;
+            background: #1e2a30;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* ===== HUD ===== */
+        .hud {
+            width: 100%;
+            margin-top: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px 14px;
+            color: #d4eaf5;
+            font-weight: 600;
+            font-size: 0.95rem;
+            background: linear-gradient(135deg, #1c2731, #15202a);
+            padding: 10px 22px;
+            border-radius: 60px;
+            box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(255, 255, 255, 0.04);
+            border: 1px solid #2e414e;
+            backdrop-filter: blur(6px);
+        }
+        .hud-group {
+            display: flex;
+            align-items: center;
+            gap: 6px 14px;
+            flex-wrap: wrap;
+        }
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #0f171f;
+            padding: 4px 16px 4px 14px;
+            border-radius: 40px;
+            border: 1px solid #2f4452;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+        .hud-item .icon {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .hud-item .value {
+            color: #f5d742;
+            font-weight: 700;
+            min-width: 24px;
+            text-align: center;
+        }
+        .hud-item .value.health {
+            color: #ff6b6b;
+        }
+        .hud-item .value.ammo {
+            color: #ffd93d;
+        }
+        .hud-item .value.kills {
+            color: #ff8a5c;
+        }
+        .hud-item .value.wave {
+            color: #6bcbff;
+        }
+
+        .hud-item.boss-alert {
+            background: #2a1212;
+            border-color: #b33;
+            color: #ff7b7b;
+            font-weight: 700;
+            animation: pulse-boss 1.2s ease-in-out infinite;
+            display: none;
+        }
+        @keyframes pulse-boss {
+            0%,
+            100% {
+                box-shadow: 0 0 4px #b33;
+            }
+            50% {
+                box-shadow: 0 0 20px #b33, 0 0 40px #b338;
+            }
+        }
+
+        .hud-item .reload-indicator {
+            color: #ffaa55;
+            font-weight: 700;
+            animation: blink 0.4s ease-in-out infinite alternate;
+        }
+        @keyframes blink {
+            0% {
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .controls kbd {
+            background: #0d161e;
+            padding: 2px 12px;
+            border-radius: 30px;
+            color: #b6d2e0;
+            border: 1px solid #3c5563;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: inset 0 1px 3px #00000066;
+        }
+        .btn {
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 5px 20px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            letter-spacing: 0.5px;
+        }
+        .btn-restart {
+            background: linear-gradient(135deg, #c73d3d, #a12a2a);
+            box-shadow: 0 4px 0 #641f1f;
+        }
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #641f1f;
+            background: linear-gradient(135deg, #e04a4a, #b83333);
+        }
+        .btn-restart:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #641f1f;
+        }
+        .btn-reload {
+            background: linear-gradient(135deg, #3a6b8f, #2a5070);
+            box-shadow: 0 4px 0 #1a3750;
+            padding: 5px 18px;
+        }
+        .btn-reload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #1a3750;
+            background: linear-gradient(135deg, #4d8ab5, #356f94);
+        }
+        .btn-reload:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #1a3750;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .game-wrapper {
+                padding: 10px;
+                border-radius: 20px;
+            }
+            canvas {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 960/640;
+                border-radius: 14px;
+            }
+            .hud {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+                padding: 10px 14px;
+                border-radius: 30px;
+            }
+            .hud-group {
+                justify-content: center;
+            }
+            .controls {
+                justify-content: center;
+            }
+        }
+        @media (max-width: 600px) {
+            .hud-item {
+                padding: 3px 10px;
+                font-size: 0.75rem;
+            }
+            .controls kbd {
+                font-size: 0.7rem;
+                padding: 1px 8px;
+            }
+            .btn {
+                font-size: 0.7rem;
+                padding: 3px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <!-- CANVAS -->
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
+
+        <!-- HUD -->
+        <div class="hud" id="hud">
+            <div class="hud-group">
+                <div class="hud-item">
+                    <span class="icon">🧟</span>
+                    <span class="value wave" id="waveDisplay">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="icon">❤️</span>
+                    <span class="value health" id="healthDisplay">100</span>
+                </div>
+                <div class="hud-item">
+                    <span class="icon">💀</span>
+                    <span class="value kills" id="killDisplay">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="icon">🔫</span>
+                    <span class="value ammo" id="ammoDisplay">12</span>
+                    <span style="color:#6a7f8a;font-weight:400;">/</span>
+                    <span style="color:#8aaec0;font-weight:400;" id="maxAmmoDisplay">12</span>
+                    <span id="reloadStatus" style="display:none;color:#ffaa55;font-weight:700;margin-left:4px;">⟳</span>
+                </div>
+                <div class="hud-item boss-alert" id="bossAlert">
+                    ⚔️ BOSS ACTIVE ⚔️
+                </div>
+            </div>
+            <div class="controls">
+                <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+                <kbd>🖱️ click</kbd>
+                <button class="btn btn-reload" id="reloadBtn">⟳ RELOAD</button>
+                <button class="btn btn-restart" id="restartBtn">↻ RESTART</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  🧟  ZOMBIE APOCALYPSE 2D  –  FULL GAME ENGINE
+        // ============================================================
+
+        // -------- CANVAS --------
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 960,
+            H = 640;
+
+        // -------- UI ELEMENTS --------
+        const waveSpan = document.getElementById('waveDisplay');
+        const healthSpan = document.getElementById('healthDisplay');
+        const killSpan = document.getElementById('killDisplay');
+        const ammoSpan = document.getElementById('ammoDisplay');
+        const maxAmmoSpan = document.getElementById('maxAmmoDisplay');
+        const reloadStatus = document.getElementById('reloadStatus');
+        const bossAlert = document.getElementById('bossAlert');
+
+        // -------- CONSTANTS --------
+        const MAX_HEALTH = 100;
+        const MAX_AMMO = 14;
+        const RELOAD_TIME = 55; // frames
+        const PLAYER_SPEED = 3.8;
+        const PLAYER_RADIUS = 18;
+
+        // -------- GAME STATE --------
+        let gameOver = false;
+        let wave = 1;
+        let kills = 0;
+        let playerHealth = MAX_HEALTH;
+        let ammo = MAX_AMMO;
+        let reloading = false;
+        let reloadTimer = 0;
+        let frame = 0;
+        let zombieSpawnCounter = 0;
+        const ZOMBIE_SPAWN_BASE = 26;
+
+        // -------- PLAYER --------
+        const player = {
+            x: 480,
+            y: 320,
+            radius: PLAYER_RADIUS,
+            speed: PLAYER_SPEED,
+            invincible: 0,
+        };
+
+        // -------- ENTITY ARRAYS --------
+        let zombies = [];
+        let boss = null;
+        let bullets = [];
+        let particles = [];
+
+        // -------- FLAGS --------
+        let bossActive = false;
+        let bossDefeated = false;
+        let winFlag = false;
+
+        // -------- ENVIRONMENT --------
+        let dayTime = 0; // 0–360
+        const DAY_SPEED = 0.12;
+
+        // -------- RAIN --------
+        let rainDrops = [];
+        const RAIN_COUNT = 350;
+        let rainIntensity = 0.7;
+
+        // -------- FOG --------
+        let fogOpacity = 0.12;
+
+        // -------- SCREEN SHAKE --------
+        let shakeX = 0,
+            shakeY = 0;
+        let shakeIntensity = 0;
+
+        // -------- KEYS (robust tracking) --------
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false,
+        };
+
+        // -------- AUDIO (Web Audio ambient drone) --------
+        let audioCtx = null;
+        let audioInitialized = false;
+
+        function initAudio() {
+            if (audioInitialized) return;
+            try {
+                audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                const master = audioCtx.createGain();
+                master.gain.value = 0.10;
+                master.connect(audioCtx.destination);
+
+                // Low drone
+                const osc1 = audioCtx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc1.frequency.value = 52;
+                const g1 = audioCtx.createGain();
+                g1.gain.value = 0.12;
+                osc1.connect(g1);
+                g1.connect(master);
+                osc1.start();
+
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = 'sine';
+                osc2.frequency.value = 68;
+                const g2 = audioCtx.createGain();
+                g2.gain.value = 0.08;
+                osc2.connect(g2);
+                g2.connect(master);
+                osc2.start();
+
+                // Noise wind
+                const bufSize = audioCtx.sampleRate * 0.6;
+                const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < bufSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * 0.25;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buf;
+                noise.loop = true;
+                const ng = audioCtx.createGain();
+                ng.gain.value = 0.05;
+                noise.connect(ng);
+                ng.connect(master);
+                noise.start();
+
+                audioInitialized = true;
+            } catch (_) { /* silent fail */ }
+        }
+
+        function resumeAudio() {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            if (!audioInitialized) initAudio();
+        }
+
+        // -------- UTILITY --------
+        function dist(a, b) {
+            return Math.hypot(a.x - b.x, a.y - b.y);
+        }
+
+        function rand(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+
+        function clamp(v, min, max) {
+            return Math.min(max, Math.max(min, v));
+        }
+
+        function lerp(a, b, t) { return a + (b - a) * t; }
+
+        // -------- SPAWN ZOMBIE --------
+        function spawnZombie() {
+            if (gameOver) return;
+            if (bossActive && zombies.length > 12) return;
+
+            const wf = wave;
+            let speed = 1.0 + (wf - 1) * 0.22;
+            speed = Math.min(speed, 4.6);
+            let radius = 14 + Math.min(wf, 14) * 0.3;
+            let health = 1 + Math.floor((wf - 1) / 2);
+            let damage = 8 + Math.floor((wf - 1) / 2.5);
+            let type = 'normal';
+            const r = Math.random();
+
+            if (r < 0.12 && wf > 3) {
+                type = 'fast';
+                health = Math.max(1, health - 1);
+                damage = Math.max(4, damage - 2);
+                speed *= 1.6;
+                radius *= 0.85;
+            } else if (r < 0.22 && wf > 5) {
+                type = 'tank';
+                health = health * 2 + 3;
+                damage = damage + 5;
+                speed *= 0.65;
+                radius *= 1.45;
+            }
+
+            let x, y;
+            const side = Math.floor(Math.random() * 4);
+            const pad = 40;
+            if (side === 0) { x = -pad;
+                y = rand(0, H); } else if (side === 1) { x = W + pad;
+                y = rand(0, H); } else if (side === 2) { x = rand(0, W);
+                y = -pad; } else { x = rand(0, W);
+                y = H + pad; }
+
+            zombies.push({
+                x,
+                y,
+                radius,
+                speed,
+                health,
+                maxHealth: health,
+                damage,
+                attackCooldown: 0,
+                type,
+                hitFlash: 0,
+                wobble: rand(0, Math.PI * 2),
+            });
+        }
+
+        // -------- SPAWN BOSS --------
+        function spawnBoss() {
+            if (bossActive || boss || gameOver) return;
+            const level = wave;
+            const health = 50 + level * 24;
+            const speed = 1.0 + Math.min(level * 0.12, 2.6);
+            const damage = 20 + Math.floor(level * 2.4);
+            const radius = 44 + Math.min(level, 22) * 0.5;
+
+            let x, y;
+            const side = Math.floor(Math.random() * 4);
+            const pad = 60;
+            if (side === 0) { x = -pad;
+                y = rand(80, H - 80); } else if (side === 1) { x = W + pad;
+                y = rand(80, H - 80); } else if (side === 2) { x = rand(80, W - 80);
+                y = -pad; } else { x = rand(80, W - 80);
+                y = H + pad; }
+
+            boss = { x, y, radius, health, maxHealth: health, speed, damage, attackCooldown: 0, hitFlash: 0,
+            type: 'boss' };
+            bossActive = true;
+            bossDefeated = false;
+            bossAlert.style.display = 'flex';
+            bossAlert.textContent = `⚔️ BOSS Lv.${wave} ⚔️`;
+            // dramatic screen shake
+            shakeIntensity = 8;
+            // clear some zombies
+            if (zombies.length > 10) zombies.splice(0, zombies.length - 8);
+        }
+
+        // -------- RESET GAME --------
+        function resetGame() {
+            gameOver = false;
+            wave = 1;
+            kills = 0;
+            playerHealth = MAX_HEALTH;
+            ammo = MAX_AMMO;
+            reloading = false;
+            reloadTimer = 0;
+            player.x = 480;
+            player.y = 320;
+            player.invincible = 0;
+            zombies = [];
+            bullets = [];
+            particles = [];
+            boss = null;
+            bossActive = false;
+            bossDefeated = false;
+            winFlag = false;
+            bossAlert.style.display = 'none';
+            frame = 0;
+            zombieSpawnCounter = 0;
+            dayTime = 0;
+            shakeIntensity = 0;
+            shakeX = 0;
+            shakeY = 0;
+            // reset keys
+            for (let k in keys) keys[k] = false;
+            updateUI();
+            resumeAudio();
+        }
+
+        // -------- UI UPDATE --------
+        function updateUI() {
+            waveSpan.textContent = wave;
+            healthSpan.textContent = Math.max(0, playerHealth);
+            killSpan.textContent = kills;
+            ammoSpan.textContent = reloading ? '...' : ammo;
+            maxAmmoSpan.textContent = MAX_AMMO;
+            reloadStatus.style.display = reloading ? 'inline' : 'none';
+            if (bossActive && boss) {
+                bossAlert.textContent = `⚔️ BOSS Lv.${wave} ⚔️`;
+                bossAlert.style.display = 'flex';
+            } else if (!bossActive && !gameOver) {
+                bossAlert.style.display = 'none';
+            }
+            if (gameOver) {
+                bossAlert.textContent = '💀 GAME OVER 💀';
+                bossAlert.style.display = 'flex';
+            }
+        }
+
+        // -------- SHOOT --------
+        function shootBullet(targetX, targetY) {
+            if (gameOver) return;
+            if (reloading) return;
+            if (ammo <= 0) { reloadGun(); return; }
+            const dx = targetX - player.x;
+            const dy = targetY - player.y;
+            const len = Math.hypot(dx, dy);
+            if (len < 0.001) return;
+            const nx = dx / len,
+                ny = dy / len;
+            const speed = 11;
+            bullets.push({
+                x: player.x + nx * 26,
+                y: player.y + ny * 26,
+                vx: nx * speed,
+                vy: ny * speed,
+                radius: 5,
+                damage: 12 + Math.floor(wave / 4),
+                lifetime: 85,
+                trail: []
+            });
+            ammo--;
+            // muzzle flash particles
+            for (let i = 0; i < 12; i++) {
+                const ang = Math.atan2(ny, nx) + rand(-0.7, 0.7);
+                const spd = rand(1.5, 5);
+                particles.push({
+                    x: player.x + nx * 26,
+                    y: player.y + ny * 26,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd,
+                    life: rand(5, 14),
+                    maxLife: 14,
+                    radius: rand(2, 5),
+                    color: `hsl(45, 100%, ${rand(65, 95)}%)`,
+                    type: 'spark',
+                    gravity: 0.02
+                });
+            }
+            // recoil shake
+            shakeIntensity = Math.min(shakeIntensity + 1.5, 6);
+            updateUI();
+            if (ammo === 0) reloadGun();
+        }
+
+        // -------- RELOAD --------
+        function reloadGun() {
+            if (reloading || ammo === MAX_AMMO) return;
+            reloading = true;
+            reloadTimer = RELOAD_TIME;
+            updateUI();
+        }
+
+        // -------- DAMAGE PLAYER --------
+        function damagePlayer(amount) {
+            if (player.invincible > 0 || gameOver) return;
+            playerHealth -= amount;
+            player.invincible = 28;
+            shakeIntensity = Math.min(shakeIntensity + 4, 12);
+            // blood particles
+            for (let i = 0; i < 16; i++) {
+                const ang = rand(0, Math.PI * 2);
+                const spd = rand(1, 6);
+                particles.push({
+                    x: player.x,
+                    y: player.y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd - 1.5,
+                    life: rand(12, 32),
+                    maxLife: 32,
+                    radius: rand(3, 8),
+                    color: `hsl(0, 80%, ${rand(18, 45)}%)`,
+                    type: 'blood',
+                    gravity: 0.08
+                });
+            }
+            if (playerHealth <= 0) {
+                playerHealth = 0;
+                gameOver = true;
+                bossAlert.textContent = '💀 GAME OVER 💀';
+                bossAlert.style.display = 'flex';
+                // big death particles
+                for (let i = 0; i < 50; i++) {
+                    const ang = rand(0, Math.PI * 2);
+                    const spd = rand(2, 10);
+                    particles.push({
+                        x: player.x,
+                        y: player.y,
+                        vx: Math.cos(ang) * spd,
+                        vy: Math.sin(ang) * spd - 2,
+                        life: rand(20, 50),
+                        maxLife: 50,
+                        radius: rand(4, 12),
+                        color: `hsl(0, 80%, ${rand(20, 50)}%)`,
+                        type: 'blood',
+                        gravity: 0.1
+                    });
+                }
+            }
+            updateUI();
+        }
+
+        // -------- UPDATE --------
+        function update() {
+            if (gameOver) {
+                // still update particles
+                updateParticles();
+                return;
+            }
+
+            // --- Day/Night ---
+            dayTime = (dayTime + DAY_SPEED) % 360;
+            const dayRad = dayTime * Math.PI / 180;
+            const brightness = 0.45 + 0.55 * Math.sin(dayRad);
+            rainIntensity = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(dayRad * 0.4 + 1.8));
+            fogOpacity = 0.06 + 0.14 * (0.5 + 0.5 * Math.sin(dayRad * 0.25 + 0.6));
+
+            // --- Player invincibility ---
+            if (player.invincible > 0) player.invincible--;
+
+            // --- Player movement (WASD) ---
+            let dx = 0,
+                dy = 0;
+            if (keys.w) dy -= 1;
+            if (keys.s) dy += 1;
+            if (keys.a) dx -= 1;
+            if (keys.d) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                const len = Math.hypot(dx, dy);
+                const nx = dx / len,
+                    ny = dy / len;
+                player.x += nx * player.speed;
+                player.y += ny * player.speed;
+                // player facing angle for particles
+                player.angle = Math.atan2(ny, nx);
+            }
+            player.x = clamp(player.x, player.radius + 2, W - player.radius - 2);
+            player.y = clamp(player.y, player.radius + 2, H - player.radius - 2);
+
+            // --- Reload ---
+            if (reloading) {
+                reloadTimer--;
+                if (reloadTimer <= 0) {
+                    reloading = false;
+                    ammo = MAX_AMMO;
+                    updateUI();
+                }
+            }
+
+            // --- Zombie AI ---
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const z = zombies[i];
+                const dxZ = player.x - z.x;
+                const dyZ = player.y - z.y;
+                const d = Math.hypot(dxZ, dyZ);
+                if (d > 0.5) {
+                    const move = Math.min(z.speed, d);
+                    z.x += (dxZ / d) * move;
+                    z.y += (dyZ / d) * move;
+                }
+                // wobble
+                z.wobble = (z.wobble || 0) + 0.03;
+
+                // attack
+                if (d < player.radius + z.radius) {
+                    if (z.attackCooldown <= 0) {
+                        damagePlayer(z.damage);
+                        z.attackCooldown = 28;
+                    }
+                }
+                if (z.attackCooldown > 0) z.attackCooldown--;
+                if (z.hitFlash > 0) z.hitFlash--;
+
+                // bullet collision
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const b = bullets[j];
+                    if (dist(b, z) < b.radius + z.radius) {
+                        z.health -= b.damage;
+                        z.hitFlash = 10;
+                        bullets.splice(j, 1);
+                        // blood spray
+                        for (let k = 0; k < 8; k++) {
+                            const ang = rand(0, Math.PI * 2);
+                            const spd = rand(0.5, 3.5);
+                            particles.push({
+                                x: z.x,
+                                y: z.y,
+                                vx: Math.cos(ang) * spd,
+                                vy: Math.sin(ang) * spd - 0.5,
+                                life: rand(8, 22),
+                                maxLife: 22,
+                                radius: rand(2, 6),
+                                color: `hsl(0, 75%, ${rand(20, 45)}%)`,
+                                type: 'blood',
+                                gravity: 0.06
+                            });
+                        }
+                        if (z.health <= 0) {
+                            kills++;
+                            // death burst
+                            for (let k = 0; k < 18; k++) {
+                                const ang = rand(0, Math.PI * 2);
+                                const spd = rand(1, 5);
+                                particles.push({
+                                    x: z.x,
+                                    y: z.y,
+                                    vx: Math.cos(ang) * spd,
+                                    vy: Math.sin(ang) * spd - 1,
+                                    life: rand(10, 30),
+                                    maxLife: 30,
+                                    radius: rand(3, 8),
+                                    color: `hsl(${rand(0, 30)}, 80%, ${rand(25, 55)}%)`,
+                                    type: 'blood',
+                                    gravity: 0.07
+                                });
+                            }
+                            zombies.splice(i, 1);
+                            updateUI();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // --- Boss AI ---
+            if (boss && bossActive) {
+                const b = boss;
+                const dxB = player.x - b.x;
+                const dyB = player.y - b.y;
+                const dB = Math.hypot(dxB, dyB);
+                if (dB > 0.5) {
+                    const move = Math.min(b.speed, dB);
+                    b.x += (dxB / dB) * move;
+                    b.y += (dyB / dB) * move;
+                }
+                if (dB < player.radius + b.radius) {
+                    if (b.attackCooldown <= 0) {
+                        damagePlayer(b.damage);
+                        b.attackCooldown = 22;
+                        shakeIntensity = Math.min(shakeIntensity + 6, 16);
+                    }
+                }
+                if (b.attackCooldown > 0) b.attackCooldown--;
+                if (b.hitFlash > 0) b.hitFlash--;
+
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
+                    if (dist(bullet, b) < bullet.radius + b.radius) {
+                        b.health -= bullet.damage;
+                        b.hitFlash = 12;
+                        bullets.splice(j, 1);
+                        shakeIntensity = Math.min(shakeIntensity + 2, 10);
+                        // sparks
+                        for (let k = 0; k < 10; k++) {
+                            const ang = rand(0, Math.PI * 2);
+                            const spd = rand(1.5, 5);
+                            particles.push({
+                                x: b.x,
+                                y: b.y,
+                                vx: Math.cos(ang) * spd,
+                                vy: Math.sin(ang) * spd,
+                                life: rand(6, 18),
+                                maxLife: 18,
+                                radius: rand(2, 5),
+                                color: `hsl(40, 100%, ${rand(55, 90)}%)`,
+                                type: 'spark',
+                                gravity: 0.03
+                            });
+                        }
+                        if (b.health <= 0) {
+                            // BOSS DEFEATED
+                            boss = null;
+                            bossActive = false;
+                            bossDefeated = true;
+                            bossAlert.style.display = 'none';
+                            kills += 20;
+                            wave++;
+                            // big explosion
+                            for (let k = 0; k < 60; k++) {
+                                const ang = rand(0, Math.PI * 2);
+                                const spd = rand(3, 12);
+                                particles.push({
+                                    x: b.x,
+                                    y: b.y,
+                                    vx: Math.cos(ang) * spd,
+                                    vy: Math.sin(ang) * spd - 1.5,
+                                    life: rand(18, 50),
+                                    maxLife: 50,
+                                    radius: rand(5, 14),
+                                    color: `hsl(${rand(20, 60)}, 100%, ${rand(50, 85)}%)`,
+                                    type: 'explosion',
+                                    gravity: 0.04
+                                });
+                            }
+                            shakeIntensity = 18;
+                            zombies = zombies.slice(0, Math.min(zombies.length, 4));
+                            winFlag = true;
+                            updateUI();
+                        }
+                    }
+                }
+            }
+
+            // --- Boss spawn (every 5 waves) ---
+            if (!bossActive && !boss && !gameOver) {
+                if (winFlag) { winFlag = false; }
+                if (wave % 5 === 0 && !bossActive && !boss) {
+                    spawnBoss();
+                }
+            }
+
+            // --- Spawn regular zombies ---
+            if (!bossActive && !gameOver) {
+                zombieSpawnCounter++;
+                const rate = Math.max(10, ZOMBIE_SPAWN_BASE - Math.floor(wave / 2.5));
+                if (zombieSpawnCounter >= rate) {
+                    zombieSpawnCounter = 0;
+                    const maxZ = 22 + Math.min(wave * 2, 55);
+                    if (zombies.length < maxZ) spawnZombie();
+                }
+            } else if (bossActive && !gameOver) {
+                zombieSpawnCounter++;
+                if (zombieSpawnCounter >= 48) {
+                    zombieSpawnCounter = 0;
+                    if (zombies.length < 14) spawnZombie();
+                }
+            }
+
+            // --- Bullets update ---
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                b.lifetime--;
+                if (b.lifetime <= 0 || b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // --- Particles update ---
+            updateParticles();
+
+            // --- Rain update ---
+            for (const drop of rainDrops) {
+                drop.y += drop.speed * (0.4 + 0.6 * rainIntensity);
+                drop.x += 0.6 * (0.3 + 0.7 * rainIntensity);
+                if (drop.y > H + 30) {
+                    drop.y = -30;
+                    drop.x = rand(0, W);
+                    drop.speed = rand(4, 14);
+                    drop.length = rand(12, 30);
+                }
+                if (drop.x > W + 30) drop.x = -30;
+            }
+
+            // --- Player collision with zombies (extra safety) ---
+            for (const z of zombies) {
+                if (dist(player, z) < player.radius + z.radius) {
+                    if (z.attackCooldown <= 0) {
+                        damagePlayer(z.damage);
+                        z.attackCooldown = 28;
+                    }
+                }
+            }
+
+            // --- Screen shake decay ---
+            if (shakeIntensity > 0) {
+                shakeIntensity *= 0.92;
+                if (shakeIntensity < 0.05) shakeIntensity = 0;
+                shakeX = (Math.random() - 0.5) * shakeIntensity * 1.6;
+                shakeY = (Math.random() - 0.5) * shakeIntensity * 1.6;
+            } else {
+                shakeX = 0;
+                shakeY = 0;
+            }
+
+            // --- Game over check ---
+            if (playerHealth <= 0) {
+                gameOver = true;
+                bossAlert.textContent = '💀 GAME OVER 💀';
+                bossAlert.style.display = 'flex';
+            }
+
+            updateUI();
+            frame++;
+        }
+
+        // -------- UPDATE PARTICLES (shared) --------
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.gravity) p.vy += p.gravity;
+                p.life--;
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            if (particles.length > 800) particles.splice(0, particles.length - 800);
+        }
+
+        // -------- DRAW --------
+        function draw() {
+            ctx.save();
+
+            // --- Screen shake ---
+            if (shakeIntensity > 0.1) {
+                ctx.translate(shakeX, shakeY);
+            }
+
+            // --- Background ---
+            const dayRad = dayTime * Math.PI / 180;
+            const brightness = 0.45 + 0.55 * Math.sin(dayRad);
+            const r = 18 + 70 * brightness;
+            const g = 35 + 110 * brightness;
+            const b = 70 + 110 * brightness;
+            const bgGrad = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 700);
+            bgGrad.addColorStop(0, `rgb(${r+30},${g+30},${b+30})`);
+            bgGrad.addColorStop(1, `rgb(${r-10},${g-10},${b-10})`);
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // --- Ground ---
+            const grd = ctx.createLinearGradient(0, H * 0.72, 0, H);
+            grd.addColorStop(0, `rgba(35,65,45,${0.25 + 0.3 * brightness})`);
+            grd.addColorStop(1, `rgba(15,35,25,${0.55 + 0.35 * brightness})`);
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, H * 0.72, W, H * 0.28);
+
+            // --- Rain ---
+            ctx.strokeStyle = `rgba(190, 215, 255, ${0.25 * rainIntensity})`;
+            ctx.lineWidth = 1.8;
+            for (const drop of rainDrops) {
+                ctx.beginPath();
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x - 3, drop.y - drop.length);
+                ctx.stroke();
+            }
+
+            // --- Particles (behind entities) ---
+            for (const p of particles) {
+                const alpha = p.life / p.maxLife;
+                ctx.globalAlpha = alpha * 0.9;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius * (0.3 + 0.7 * alpha), 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // --- Bullets with trail ---
+            for (const b of bullets) {
+                ctx.shadowColor = '#ffdd55';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#f5e56b';
+                ctx.fill();
+                // glow ring
+                ctx.shadowBlur = 40;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#fffbe6';
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            // --- Zombies ---
+            for (const z of zombies) {
+                const flash = z.hitFlash > 0;
+                ctx.shadowColor = '#1f4a2a';
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2);
+                let color = '#2b7a4b';
+                if (z.type === 'tank') color = '#3d7a4a';
+                else if (z.type === 'fast') color = '#4f8a5a';
+                ctx.fillStyle = flash ? '#ffaa88' : color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // health bar
+                const hp = z.health / z.maxHealth;
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(z.x - 22, z.y - 34, 44, 5);
+                ctx.fillStyle = hp > 0.6 ? '#4eff4e' : '#ff8844';
+                ctx.fillRect(z.x - 22, z.y - 34, 44 * hp, 5);
+
+                // zombie emoji (with wobble)
+                ctx.font = `${Math.round(z.radius * 0.9)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const wob = Math.sin(z.wobble || 0) * 2;
+                ctx.fillStyle = '#1f3d2a';
+                ctx.fillText('🧟', z.x + wob * 0.3, z.y - 2);
+            }
+
+            // --- Boss ---
+            if (boss && bossActive) {
+                const b = boss;
+                const flash = b.hitFlash > 0;
+                ctx.shadowColor = '#b33';
+                ctx.shadowBlur = 40;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = flash ? '#ff8844' : '#6d1a1a';
+                ctx.fill();
+                // inner glow
+                ctx.shadowBlur = 60;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = flash ? '#ffaa66' : '#8a2222';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // health bar
+                const hp = b.health / b.maxHealth;
+                ctx.fillStyle = '#0a0505';
+                ctx.fillRect(b.x - 70, b.y - 60, 140, 14);
+                ctx.fillStyle = hp > 0.5 ? '#e03a3a' : '#ff2222';
+                ctx.fillRect(b.x - 70, b.y - 60, 140 * hp, 14);
+                ctx.strokeStyle = '#b33';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(b.x - 70, b.y - 60, 140, 14);
+
+                // boss label
+                ctx.fillStyle = '#ffb07c';
+                ctx.font = 'bold 17px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(`👹 Lv.${wave}`, b.x, b.y - 64);
+                // boss icon
+                ctx.font = `${Math.round(b.radius * 0.9)}px sans-serif`;
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#3a0a0a';
+                ctx.fillText('👹', b.x, b.y + 2);
+            }
+
+            // --- Player ---
+            const inv = player.invincible > 0 && player.invincible % 6 < 3;
+            ctx.shadowColor = '#4c9eff';
+            ctx.shadowBlur = inv ? 10 : 30;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = inv ? '#b0d0ff' : '#4c9eff';
+            ctx.fill();
+            // inner highlight
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(player.x - 4, player.y - 5, player.radius * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fill();
+            // player emoji
+            ctx.font = '26px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1f2b3a';
+            ctx.fillText('🧑‍💼', player.x, player.y + 2);
+
+            // --- Fog overlay ---
+            ctx.fillStyle = `rgba(170, 195, 215, ${fogOpacity * 0.55})`;
+            ctx.fillRect(0, 0, W, H);
+
+            // --- Vignette ---
+            const vigGrad = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9);
+            vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            vigGrad.addColorStop(1, `rgba(0,0,0,${0.3 + 0.2 * (1 - brightness)})`);
+            ctx.fillStyle = vigGrad;
+            ctx.fillRect(0, 0, W, H);
+
+            // --- Game Over overlay ---
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.65)';
+                ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#ffbaba';
+                ctx.font = 'bold 62px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = '#ff000066';
+                ctx.shadowBlur = 40;
+                ctx.fillText('☠️ GAME OVER ☠️', W / 2, H / 2 - 30);
+                ctx.shadowBlur = 0;
+                ctx.font = '24px monospace';
+                ctx.fillStyle = '#ddd';
+                ctx.fillText('click RESTART to survive again', W / 2, H / 2 + 60);
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+            }
+
+            ctx.restore();
+        }
+
+        // -------- KEYBOARD HANDLING (robust) --------
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                keys[key] = true;
+                e.preventDefault();
+                resumeAudio();
+            }
+            if (key === 'r') {
+                reloadGun();
+                e.preventDefault();
+                resumeAudio();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                keys[key] = false;
+                e.preventDefault();
+            }
+        });
+
+        // --- Window blur: release all keys ---
+        window.addEventListener('blur', () => {
+            for (let k in keys) keys[k] = false;
+        });
+
+        // -------- MOUSE / TOUCH (shoot) --------
+        function handlePointer(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            const mx = (clientX - rect.left) * scaleX;
+            const my = (clientY - rect.top) * scaleY;
+            if (mx >= 0 && mx <= W && my >= 0 && my <= H) {
+                shootBullet(mx, my);
+                resumeAudio();
+            }
+        }
+
+        canvas.addEventListener('click', handlePointer);
+        canvas.addEventListener('touchstart', handlePointer, { passive: false });
+        canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+        // -------- BUTTONS --------
+        document.getElementById('reloadBtn').addEventListener('click', () => { reloadGun();
+            resumeAudio(); });
+        document.getElementById('restartBtn').addEventListener('click', () => { resetGame();
+            resumeAudio(); });
+
+        // -------- INIT RAIN --------
+        for (let i = 0; i < RAIN_COUNT; i++) {
+            rainDrops.push({
+                x: rand(0, W),
+                y: rand(-50, H + 50),
+                speed: rand(4, 14),
+                length: rand(12, 30),
+                opacity: rand(0.2, 0.6)
+            });
+        }
+
+        // -------- GAME LOOP --------
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // -------- START --------
+        resetGame();
+        gameLoop();
+
+        // resume audio on any user interaction
+        document.addEventListener('click', resumeAudio, { once: true });
+        document.addEventListener('keydown', resumeAudio, { once: true });
+        console.log('🧟 ZOMBIE APOCALYPSE 2D · WASD to move · Click to shoot · R to reload');
+    </script>
+</body>
+</html>
